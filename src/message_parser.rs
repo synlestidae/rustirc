@@ -21,6 +21,9 @@ fn parse_message(message_str : String) -> Result<Message, (String, usize)>  {
 	println!("Parsing params...");
 	let parameters = try!(parse_parameters(&chars, &mut index));
 
+	eat_char(&chars, '\r', &mut index);
+	eat_char(&chars, '\n', &mut index);
+
 	return Ok(Message {
 		prefix : prefix, 
 		command : command, 
@@ -58,7 +61,7 @@ fn parse_host(message_str : &Vec<char>, index : &mut usize) -> Result<String, (S
 
 fn parse_command(message_str : &Vec<char>, index : &mut usize) -> Result<Command, (String, usize)> {
 	let mut command_str = String::new();
-	if (message_str[*index]).is_digit(10) {
+	if message_str[*index].is_digit(10) {
 		while *index < message_str.len() && (message_str[*index]).is_digit(10) {
 			command_str.push(message_str[*index]);
 			*index = *index + 1;
@@ -79,8 +82,51 @@ fn parse_command(message_str : &Vec<char>, index : &mut usize) -> Result<Command
 	}
 }
 
+//params     =  *14( SPACE middle ) [ SPACE ":" trailing ]
+//               =/ 14( SPACE middle ) [ SPACE [ ":" ] trailing ]
+//so either less than 14 parameters, with possibility of  ' :' + trailing,
+//otherwise 14 parameters exactly at the start, followed by a space and optionall with ':' + trailing
 fn parse_parameters(message_str : &Vec<char>, index : &mut usize) -> Result<Vec<String>, (String, usize)> {
-	return Ok(Vec::new());
+		let mut param_list = Vec::new();
+		match parse_parameters_rec(message_str, index, &mut param_list) {
+			Ok(vec) => {
+				let result = (*vec).clone(); //cheating
+				return Ok(result);
+			},
+			Err(e) => return Err(e) 
+		}
+}
+
+fn parse_parameters_rec<'a>(message_str : &Vec<char>, 
+	index : &mut usize, parsedParams : &'a mut Vec<String>) -> Result<&'a Vec<String>, (String, usize)> {
+	if *index >= message_str.len() {
+			return Ok(parsedParams);
+	}
+	eat_char(message_str, ' ', index);
+	let middle = try!(parse_middle(message_str, index));
+	parsedParams.push(middle);
+	if *index < message_str.len() - 1 {
+		return parse_parameters_rec(message_str, index, parsedParams);
+	}
+	return Ok(parsedParams);
+}
+
+fn parse_middle(message_str : &Vec<char>, index : &mut usize) -> Result<String, (String, usize)> {
+	let mut middle = String::new();
+	while is_valid_middle_char(message_str[*index]) {
+		middle.push(message_str[*index]);
+		*index += 1;
+	}
+	if middle.len() == 0 {
+		return Err(("middle is empty".to_string(), *index));
+	}
+	return Ok(middle);
+}
+
+//%x01-09 / %x0B-0C / %x0E-1F / %x21-39 / %x3B-FF
+//; any octet except NUL, CR, LF, " " and ":"
+fn is_valid_middle_char(c : char) -> bool {
+	return  c != '\r' && c != '\n' && c != ' ' && c != ':';
 }
 
 fn eat_char(chars : &Vec<char>, c : char, expectedIndex: &mut usize) -> Result<char, (String, usize)> {
@@ -97,12 +143,50 @@ mod message_parser_tests {
 	use message::{Message, Prefix, Command};
 
 	#[test]
-	fn smoke_test_1() {
-		let message = String::from(":irc.freenode.net NICK nico676\r\n");
-		let host = String::from(":irc.freenode.net");
-		let message = parse_message(message);
-		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.unwrap().prefix.unwrap())	;
+	fn test_nickmessage_parses_1() {
+		let messageStr = String::from(":irc.freenode.net NICK nico676\r\n");
+		let host = String::from("irc.freenode.net");
+		let command = String::from("NICK");
+		let message = parse_message(messageStr).unwrap();
+		assert_eq!(Command::LetterCommand {command : command}, message.command);
+		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.prefix.unwrap());
 	}
+
+	#[test]
+	fn test_nickmessage_parses_2() {
+		let message = String::from(":someserver.net NICK nico676\r\n");
+		let host = String::from("someserver.net");
+		let message = parse_message(message);
+		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.unwrap().prefix.unwrap())	;	
+	}
+
+
+	#[test]
+	fn test_nickmessage_parses_3() {
+		let message = String::from(":localhost NICK ll\r\n");
+		let host = String::from("localhost");
+		let message = parse_message(message);
+		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.unwrap().prefix.unwrap())	;	
+	}
+
+	#[test]
+	fn test_usermessage_parses_1() {
+		let message = String::from("USER someguy 0 * :Some Guy\r\n");
+		let message = parse_message(message).unwrap();
+		assert!(message.prefix.is_none());
+		assert_eq!(Command::LetterCommand{command : "USER".to_string()}, message.command);
+	}
+
+	#[test]
+	fn test_usermessage_parses_2() {
+		let message = String::from("USER jono3 0 * :John Third\r\n");
+		let message = parse_message(message).unwrap();
+		assert!(message.prefix.is_none());
+		assert_eq!(Command::LetterCommand{command : "USER".to_string()}, message.command);
+		assert_eq!(message.parameters, vec!["jono3".to_string(), "0".to_string(), "*".to_string(), "John Third".to_string()]);
+	}
+
 }
 
 //:irc.freenode.net NICK nico676
+USER jono3 0 * :John Third
