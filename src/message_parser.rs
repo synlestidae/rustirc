@@ -78,10 +78,6 @@ fn parse_command(message_str : &Vec<char>, index : &mut usize) -> Result<Command
 	}
 }
 
-//params     =  *14( SPACE middle ) [ SPACE ":" trailing ]
-//               =/ 14( SPACE middle ) [ SPACE [ ":" ] trailing ]
-//so either less than 14 parameters, with possibility of  ' :' + trailing,
-//otherwise 14 parameters exactly at the start, followed by a space and optionall with ':' + trailing
 fn parse_parameters(message_str : &Vec<char>, index : &mut usize) -> Result<Vec<String>, (String, usize)> {
 		let mut param_list = Vec::new();
 		match parse_parameters_rec(message_str, index, &mut param_list) {
@@ -100,18 +96,14 @@ fn parse_parameters_rec<'a>(message_str : &Vec<char>,
 	}
 	eat_char(message_str, ' ', index);
 	if (message_str[*index] == ':') {
-		println!("parsing trailing");
 		eat_char(message_str, ':', index);
 		return parse_trailing_parameters_rec(message_str, index, parsedParams);
 	}
 	let middle = try!(parse_middle(message_str, index));
-	println!("Parsed param {}", middle);
 	parsedParams.push(middle);
 	if *index < message_str.len() - 2 {
-		println!("Parsing more... {} {}", *index, message_str.len());
 		return parse_parameters_rec(message_str, index, parsedParams);
 	}
-	println!("Done parsing");
 	return Ok(parsedParams);
 }
 
@@ -122,7 +114,6 @@ fn parse_trailing_parameters_rec<'a>(message_str : &Vec<char>,
 		param.push(message_str[*index]);
 		*index += 1;
 	}
-	println!("Parsed end param {}", param);
 	parsedParams.push(param);
 	Ok(parsedParams)
 }
@@ -139,8 +130,6 @@ fn parse_middle(message_str : &Vec<char>, index : &mut usize) -> Result<String, 
 	return Ok(middle);
 }
 
-//%x01-09 / %x0B-0C / %x0E-1F / %x21-39 / %x3B-FF
-//; any octet except NUL, CR, LF, " " and ":"
 fn is_valid_middle_char(c : char) -> bool {
 	return  c != '\r' && c != '\n' && c != ' ' && c != ':';
 }
@@ -173,8 +162,10 @@ mod message_parser_tests {
 	fn test_nickmessage_parses_2() {
 		let message = String::from(":someserver.net NICK nico676\r\n");
 		let host = String::from("someserver.net");
-		let message = parse_message(message);
-		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.unwrap().prefix.unwrap())	;	
+		let message = parse_message(message).unwrap();
+		assert_eq!(Command::LetterCommand {command : "NICK".to_string()}, message.command);
+		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.prefix.unwrap());
+		assert_eq!("nico676", &message.parameters[0]);
 	}
 
 
@@ -182,8 +173,10 @@ mod message_parser_tests {
 	fn test_nickmessage_parses_3() {
 		let message = String::from(":localhost NICK ll\r\n");
 		let host = String::from("localhost");
-		let message = parse_message(message);
-		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.unwrap().prefix.unwrap())	;	
+		let message = parse_message(message).unwrap();
+		assert_eq!(Prefix::ServerNamePrefix {name : host}, message.prefix.unwrap());
+		assert_eq!(Command::LetterCommand {command : "NICK".to_string()}, message.command);	
+		assert_eq!("ll", &message.parameters[0]);
 	}
 
 	#[test]
@@ -210,9 +203,4 @@ mod message_parser_tests {
 		assert!(message.prefix.is_none());
 		assert_eq!(Command::LetterCommand{command : "USER".to_string()}, message.command);
 	}
-
 }
-
-//:irc.freenode.net NICK nico676
-//USER jono3 0 * :John Third
-//
