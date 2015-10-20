@@ -3,7 +3,7 @@ use std::char;
 use std::str;
 use message::{Message, Prefix, Command};
 
-fn parse_message(message_str : String) -> Result<Message, (String, usize)>  {
+pub fn parse_message(message_str : String) -> Result<Message, (String, usize)>  {
 	let chars : Vec<char> = message_str.chars().collect();
 
 	let mut index : usize = 0;

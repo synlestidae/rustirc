@@ -10,6 +10,7 @@ use std::io;
 mod message;
 mod message_parser;
 mod message_queue;
+mod session;
 
 fn main() {
 	let host = "irc.freenode.net";
@@ -73,16 +74,16 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 
 	let mut reader = BufReader::new(stream.try_clone().unwrap());
 	let mut writer = BufWriter::new(stream);
-
-	let mut message_from_server = String::new();
 	let mut queue = message_queue::RecvMessageQueue::new(rx);
 
 	thread::spawn(move ||
 		while (true) {
+			let mut message_from_server = String::new();
 			reader.read_line(&mut message_from_server);
+			let message = message_parser::parse_message(message_from_server);
 			//Parse the message
 			//Give it to the queue
-			println!("{}", message_from_server);
+			println!("{:?}", message);
 		});
 
 	writer.write_all(&(nick_message.to_message_bytes()));
