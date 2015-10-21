@@ -1,5 +1,5 @@
 use std::sync::mpsc::{Sender, Receiver};
-use message::{Message, QueueControlMessage};
+use session::message::{Message, QueueControlMessage};
 
 pub struct RecvMessageQueue {
 	recv : Receiver<Result<Message, QueueControlMessage>>

@@ -1,7 +1,7 @@
 #![feature(advanced_slice_patterns, slice_patterns)]
 use std::char;
 use std::str;
-use message::{Message, Prefix, Command};
+use session::message::{Message, Prefix, Command};
 
 pub fn parse_message(message_str : String) -> Result<Message, (String, usize)>  {
 	let chars : Vec<char> = message_str.chars().collect();
@@ -145,7 +145,7 @@ fn eat_char(chars : &Vec<char>, c : char, expectedIndex: &mut usize) -> Result<c
 
 mod message_parser_tests {
 	use super::{parse_message};
-	use message::{Message, Prefix, Command};
+	use session::message::{Message, Prefix, Command};
 
 	#[test]
 	fn test_nickmessage_parses_1() {

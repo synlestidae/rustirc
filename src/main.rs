@@ -7,10 +7,12 @@ use std::thread;
 use std::sync::mpsc::channel;
 use std::io;
 
-mod message;
-mod message_parser;
-mod message_queue;
 mod session;
+mod model;
+
+use session::message::{Message, QueueControlMessage, nick_message, user_message, join_channel_message};
+use session::message_queue::{RecvMessageQueue};
+use session::message_parser::{parse_message};
 
 fn main() {
 	let host = "irc.freenode.net";
@@ -67,14 +69,14 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let servername = String::from("irc.freenode.net");
 	let user = String::from("ha4542");
 
-	let nick_message = message::nick_message(servername.clone(), nickname);
-	let user_message = message::user_message(servername.clone(), user, String::from("Harry Potter"));
+	let nick_message = nick_message(servername.clone(), nickname);
+	let user_message = user_message(servername.clone(), user, String::from("Harry Potter"));
 
-	let (tx, rx) = channel::<Result<message::Message, message::QueueControlMessage>>();
+	let (tx, rx) = channel::<Result<Message, QueueControlMessage>>();
 
 	let mut reader = BufReader::new(stream.try_clone().unwrap());
 	let mut writer = BufWriter::new(stream);
-	let mut queue = message_queue::RecvMessageQueue::new(rx);
+	let mut queue = RecvMessageQueue::new(rx);
 
 	thread::spawn(move || {
 		queue.run();
@@ -84,7 +86,7 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 		loop {
 			let mut message_from_server = String::new();
 			reader.read_line(&mut message_from_server);
-			match message_parser::parse_message(message_from_server) {
+			match parse_message(message_from_server) {
 				Ok(message) => { tx.send(Ok(message)); ()},
 				Err(_) => ()/*println!("Dumping erroneous message")*/
 			}
@@ -98,10 +100,10 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let mut line = String::new();
 	input.read_line(&mut line);
 
-	let join_message = message::join_channel_message(servername, line);
+	let join_message = join_channel_message(servername, line);
 	writer.write_all(&(join_message.to_message_bytes()));
 
-	while true {
+	loop {
 		line = String::new();
 		input.read_line(&mut line);
 		println!("You wrote: {}", line.trim());
