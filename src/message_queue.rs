@@ -17,11 +17,13 @@ impl RecvMessageQueue {
 	}
 
 	pub fn run(self : &mut Self) {
-		match self.recv.recv() {
-			Err(_) => return, //Errors mean we terminate
-			Ok(Err(QueueControlMessage::TERMINATE)) => return,
-			Ok(Ok(ref message)) => {
-				self.deal_with_message(&message);
+		loop {
+			match self.recv.recv() {
+				Err(_) => return, //Errors mean we terminate
+				Ok(Err(QueueControlMessage::TERMINATE)) => return,
+				Ok(Ok(ref message)) => {
+					self.deal_with_message(&message);
+				}
 			}
 		}
 	}
@@ -30,15 +32,3 @@ impl RecvMessageQueue {
 		println!("Got some kind of message");
 	}
 }
-
-/*impl SendMessageQueue {
-	pub fn new(sender : Sender<Result<Message, QueueControlMessage>>) -> SendMessageQueue {
-		SendMessageQueue {
-			sender : sender
-		}
-	}
-
-	pub fn initiate_session() {
-
-	}	
-}*/

@@ -76,14 +76,18 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let mut writer = BufWriter::new(stream);
 	let mut queue = message_queue::RecvMessageQueue::new(rx);
 
+	thread::spawn(move || {
+		queue.run();
+	});
+
 	thread::spawn(move ||
-		while (true) {
+		loop {
 			let mut message_from_server = String::new();
 			reader.read_line(&mut message_from_server);
-			let message = message_parser::parse_message(message_from_server);
-			//Parse the message
-			//Give it to the queue
-			println!("{:?}", message);
+			match message_parser::parse_message(message_from_server) {
+				Ok(message) => { tx.send(Ok(message)); ()},
+				Err(_) => ()/*println!("Dumping erroneous message")*/
+			}
 		});
 
 	writer.write_all(&(nick_message.to_message_bytes()));
