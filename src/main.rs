@@ -11,7 +11,7 @@ mod session;
 mod model;
 
 use session::message::{Message, QueueControlMessage, nick_message, user_message, join_channel_message};
-use session::message_queue::{RecvMessageQueue};
+use session::message_queue::{RecvMessageQueue, WritingQueue};
 use session::message_parser::{parse_message};
 
 fn main() {
@@ -32,39 +32,6 @@ fn main() {
 	}
 }
 
-trait IrcMessage {
-	fn to_message_bytes(self : &Self) -> Vec<u8>;
-}
-
-struct NickMessage {
-	nickname : String
-}
-
-struct UserMessage {
-	username : String,
-	real_name : String
-}
-
-impl NickMessage {
-	pub fn new(nickname : String) -> NickMessage {
-		return NickMessage {nickname : nickname};
-	}
-}
-
-impl IrcMessage for NickMessage {
-	fn to_message_bytes(self : &Self) -> Vec<u8> {
-		let mut out = format!("NICK {}\r\n", self.nickname);
-		return out.as_bytes().to_owned(); 
-	}
-}
-
-impl IrcMessage for UserMessage {
-	fn to_message_bytes(self : &Self) -> Vec<u8> {
-		let mut out = format!("USER {} 0 * :{}\r\n", self.username, self.real_name);
-		return out.as_bytes().to_owned();
-	}
-}
-
 fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let servername = String::from("irc.freenode.net");
 	let user = String::from("ha4542");
@@ -73,13 +40,19 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let user_message = user_message(servername.clone(), user, String::from("Harry Potter"));
 
 	let (tx, rx) = channel::<Result<Message, QueueControlMessage>>();
+	let (string_tx, string_rx) = channel::<Option<String>>();
 
 	let mut reader = BufReader::new(stream.try_clone().unwrap());
 	let mut writer = BufWriter::new(stream);
 	let mut queue = RecvMessageQueue::new(rx);
 
+	let mut writingQueue = WritingQueue {
+		receiver : string_rx,
+		stream : writer
+	};
+
 	thread::spawn(move || {
-		queue.run();
+		writingQueue.run();
 	});
 
 	thread::spawn(move ||
@@ -88,12 +61,14 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 			reader.read_line(&mut message_from_server);
 			match parse_message(message_from_server) {
 				Ok(message) => { tx.send(Ok(message)); ()},
-				Err(_) => ()/*println!("Dumping erroneous message")*/
+				Err(_) => ()
 			}
 		});
 
-	writer.write_all(&(nick_message.to_message_bytes()));
-	writer.write_all(&(user_message.to_message_bytes()));
+
+
+	//writer.write_all(&(nick_message.to_message_bytes()));
+	//writer.write_all(&(user_message.to_message_bytes()));
 
 	//Just continue in the main thread
 	let mut input = io::stdin();

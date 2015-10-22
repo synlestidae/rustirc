@@ -4,14 +4,14 @@ pub mod message_parser;
 
 use session::message::{Message};
 
-pub struct IrcSessionView;
+use model::smallobjects::{User, MessageLine, ChannelName};
+use model::ircsession::{IrcSession};
+
+pub struct IrcSessionView {
+	session : IrcSession,
+	current_channel : ChannelName
+}
 
 impl IrcSessionView {
-	pub fn new(room : &str) {
-		println!("You have joined {}", room);
-	}
-
-	pub fn display_message(from : &str, saidWhat : &str) {
-		println!("{}: {}", from, saidWhat);
-	}
+	
 }

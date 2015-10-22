@@ -1,12 +1,13 @@
 use std::sync::mpsc::{Sender, Receiver};
-use session::message::{Message, QueueControlMessage};
-use std::io::{BufWriter};
-use std::net::tcp::TcpStream;
-use std::io::Write;
+use message::{Message, QueueControlMessage};
 
 pub struct RecvMessageQueue {
 	recv : Receiver<Result<Message, QueueControlMessage>>
 }
+
+//pub struct SendMessageQueue {
+//	sender : Sender<Result<Message, QueueControlMessage>>
+//}
 
 impl RecvMessageQueue {
 	pub fn new(recv : Receiver<Result<Message, QueueControlMessage>>) -> RecvMessageQueue {
@@ -15,7 +16,7 @@ impl RecvMessageQueue {
 		}
 	}
 
-	pub fn run(self : &mut Self, output : &mut BufWriter<&mut TcpStream>) {
+	pub fn run(self : &mut Self) {
 		loop {
 			match self.recv.recv() {
 				Err(_) => return, //Errors mean we terminate
@@ -29,23 +30,5 @@ impl RecvMessageQueue {
 
 	pub fn deal_with_message(self : &Self, message : &Message) {
 		println!("Got some kind of message");
-	}
-}
-
-pub struct WritingQueue {
-	receiver : Receiver<Option<String>>,
-	stream : BufWriter<TcpStream>
-}
-
-
-impl WritingQueue {
-	pub fn run(self :&mut Self) {
-		loop {
-			match self.receiver.recv() {
-				Ok(None) => break,
-				Ok(Some(string)) => {self.stream.write_all(&string.into_bytes()); ()},
-				Err(_) => {} //ignore errors
-			}
-		}
 	}
 }
