@@ -1,6 +1,7 @@
 use model::smallobjects::{User, MessageLine, ChannelName};
 
 pub struct IrcSession {
+	pub me : User,
 	active_channels : Vec<IrcChannel>
 }
 
@@ -8,6 +9,15 @@ pub struct IrcChannel {
 	users : Vec<User>,
 	messages : Vec<MessageLine>,
 	channelName : ChannelName
+}
+
+impl IrcSession {
+	pub fn new(my_username : String) -> IrcSession {
+		IrcSession {
+			active_channels : Vec::new(),
+			me : User { nick : my_username }
+		}
+	}
 }
 
 impl IrcChannel {

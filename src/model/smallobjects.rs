@@ -1,10 +1,11 @@
+#[derive(Debug)]
 pub struct User {
-	nick : String
+	pub nick : String
 }
 
 pub struct MessageLine {
-	sender : User,
-	body : String
+	pub sender : User,
+	pub body : String
 }
 
 pub type ChannelName = String;

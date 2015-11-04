@@ -2,8 +2,10 @@
 use std::char;
 use std::str;
 use session::message::{Message, Prefix, Command};
+use session::log::{log};
 
-pub fn parse_message(message_str : String) -> Result<Message, (String, usize)>  {
+
+pub fn parse_message(message_str : &String) -> Result<Message, (String, usize)>  {
 	let chars : Vec<char> = message_str.chars().collect();
 
 	let mut index : usize = 0;

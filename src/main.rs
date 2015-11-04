@@ -5,14 +5,19 @@ use std::io::{BufReader, BufWriter};
 use std::io::{BufRead};
 use std::thread;
 use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender;
 use std::io;
 
 mod session;
 mod model;
 
-use session::message::{Message, QueueControlMessage, nick_message, user_message, join_channel_message};
-use session::message_queue::{RecvMessageQueue, WritingQueue};
+use session::message::{Message, Prefix, Command, QueueControlMessage, nick_message, user_message, join_channel_message};
+use session::message_queue::{AppAction, WritingQueue};
+use session::user_input_queue::{InputQueue};
 use session::message_parser::{parse_message};
+use session::log::{log};
+
+use model::ircsession::{IrcSession, IrcChannel};
 
 fn main() {
 	let host = "irc.freenode.net";
@@ -20,11 +25,11 @@ fn main() {
 
 	let connection_string = (host,port)	;
 
-	println!("Welcome! Connecting to...");
+	println!("Welcome friend! Connecting to...");
 
 	let mut stream_connect = TcpStream::connect(connection_string);
 
-	let nick = String::from("nico676");
+	let nick = String::from("p3nny54");
 
 	match stream_connect {
 		Err(_) => println!("Failed to connect. Goodbye."),
@@ -34,53 +39,72 @@ fn main() {
 
 fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let servername = String::from("irc.freenode.net");
-	let user = String::from("ha4542");
+	let user = nickname.clone();
 
 	let nick_message = nick_message(servername.clone(), nickname);
 	let user_message = user_message(servername.clone(), user, String::from("Harry Potter"));
 
-	let (tx, rx) = channel::<Result<Message, QueueControlMessage>>();
-	let (string_tx, string_rx) = channel::<Option<String>>();
+	let (action_tx, action_rx) = channel::<AppAction>();
 
-	let mut reader = BufReader::new(stream.try_clone().unwrap());
-	let mut writer = BufWriter::new(stream);
-	let mut queue = RecvMessageQueue::new(rx);
+	let mut socket_reader = BufReader::new(stream.try_clone().unwrap());
+	let mut socket_writer = BufWriter::new(stream.try_clone().unwrap());
 
 	let mut writingQueue = WritingQueue {
-		receiver : string_rx,
-		stream : writer
+		receiver : action_rx,
+		stream : socket_writer
 	};
 
-	thread::spawn(move || {
-		writingQueue.run();
+	let mut action_tx_clone = action_tx.clone();
+
+	thread::spawn(|| {
+		InputQueue::new(action_tx_clone).run();
 	});
 
-	thread::spawn(move ||
+	action_tx.send(AppAction::Transmit(nick_message));
+	action_tx.send(AppAction::Transmit(user_message));
+	
+	let mut session = 
+
+	thread::spawn(move || {
 		loop {
-			let mut message_from_server = String::new();
-			reader.read_line(&mut message_from_server);
-			match parse_message(message_from_server) {
-				Ok(message) => { tx.send(Ok(message)); ()},
-				Err(_) => ()
+			let mut line = String::new();
+
+			socket_reader.read_line(&mut line);
+			
+			let message = parse_message(&line).unwrap();
+
+			log(&format!("{:?}", message));
+
+			match message.command {
+				Command::LetterCommand {
+					command : command
+				} => {
+				if command.to_lowercase() == "ping" {
+					log(&format!("Ponging..."));
+					action_tx.send(AppAction::Transmit(
+						Message {
+							prefix : message.prefix,
+							command : Command::LetterCommand {
+								command : "PONG".to_string()
+							},
+							parameters : Vec::new()
+						}));	
+				}else if command.to_lowercase() == "names" {
+
+					}
+				},
+				Command::DigitCommand {command : numeric}=> {
+					match numeric.as_ref() {
+						"401" => println!("No such username"),
+						"403" => println!("Server name does not exist"),
+						"404" => println!("That channel does not exist"),
+						"405" => println!("You have joined too many channels"),
+						_ => println!("Couldn't work out the numeric command from server: {}", numeric)
+					}
+				} 
 			}
-		});
+		}
+	});
 
-
-
-	//writer.write_all(&(nick_message.to_message_bytes()));
-	//writer.write_all(&(user_message.to_message_bytes()));
-
-	//Just continue in the main thread
-	let mut input = io::stdin();
-	let mut line = String::new();
-	input.read_line(&mut line);
-
-	let join_message = join_channel_message(servername, line);
-	writer.write_all(&(join_message.to_message_bytes()));
-
-	loop {
-		line = String::new();
-		input.read_line(&mut line);
-		println!("You wrote: {}", line.trim());
-	}
+	writingQueue.run();
 }

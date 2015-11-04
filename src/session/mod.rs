@@ -1,6 +1,8 @@
 pub mod message;
 pub mod message_queue;
 pub mod message_parser;
+pub mod user_input_queue;
+pub mod log;
 
 use session::message::{Message};
 
