@@ -18,18 +18,34 @@ use session::message_parser::{parse_message};
 use session::log::{log};
 
 use model::ircsession::{IrcSession, IrcChannel};
+use model::message_processor::{MessageProcessor};
+
+fn prompt(prompt_text : &str) -> String {
+	let stdin = io::stdin();
+	let mut stdout = io::stdout();
+
+	print!("{}", prompt_text);
+	stdout.flush();
+
+	let mut line = String::new();
+
+	stdin.lock().read_line(&mut line);
+
+	line = line.trim().to_string();
+	return line;
+}
 
 fn main() {
-	let host = "irc.freenode.net";
+	let host = "irc.mozilla.org";
 	let port = 6667;
 
 	let connection_string = (host,port)	;
 
-	println!("Welcome friend! Connecting to...");
+	println!("Welcome friend! Connecting to {} on port {}...", host, port);
 
 	let mut stream_connect = TcpStream::connect(connection_string);
 
-	let nick = String::from("p3nny54");
+	let mut nick = prompt("Please enter your nick: ").to_string();
 
 	match stream_connect {
 		Err(_) => println!("Failed to connect. Goodbye."),
@@ -41,7 +57,7 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let servername = String::from("irc.freenode.net");
 	let user = nickname.clone();
 
-	let nick_message = nick_message(servername.clone(), nickname);
+	let nick_message = nick_message(servername.clone(), nickname.clone());
 	let user_message = user_message(servername.clone(), user, String::from("Harry Potter"));
 
 	let (action_tx, action_rx) = channel::<AppAction>();
@@ -63,7 +79,7 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	action_tx.send(AppAction::Transmit(nick_message));
 	action_tx.send(AppAction::Transmit(user_message));
 	
-	let mut session = 
+	let mut session_processor = MessageProcessor::new(action_tx, IrcSession::new(&nickname));
 
 	thread::spawn(move || {
 		loop {
@@ -73,36 +89,7 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 			
 			let message = parse_message(&line).unwrap();
 
-			log(&format!("{:?}", message));
-
-			match message.command {
-				Command::LetterCommand {
-					command : command
-				} => {
-				if command.to_lowercase() == "ping" {
-					log(&format!("Ponging..."));
-					action_tx.send(AppAction::Transmit(
-						Message {
-							prefix : message.prefix,
-							command : Command::LetterCommand {
-								command : "PONG".to_string()
-							},
-							parameters : Vec::new()
-						}));	
-				}else if command.to_lowercase() == "names" {
-
-					}
-				},
-				Command::DigitCommand {command : numeric}=> {
-					match numeric.as_ref() {
-						"401" => println!("No such username"),
-						"403" => println!("Server name does not exist"),
-						"404" => println!("That channel does not exist"),
-						"405" => println!("You have joined too many channels"),
-						_ => println!("Couldn't work out the numeric command from server: {}", numeric)
-					}
-				} 
-			}
+			session_processor.process_message(&message);
 		}
 	});
 

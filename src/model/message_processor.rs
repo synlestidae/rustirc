@@ -1,23 +1,30 @@
 use model::smallobjects::User;
 use model::ircsession::{IrcSession, IrcChannel};
+use std::collections::HashMap;
+use std::sync::mpsc::Sender;
+use session::message_queue::{AppAction};
 
 use session::message::{Message, Command, Prefix};
 
 pub struct MessageProcessor {
 	session : IrcSession,
-	temp_name_list : Vec<User>
+	channels_users : HashMap<String, Vec<User>>,
+	sender : Sender<AppAction>
 }
 
 impl MessageProcessor {
 
-	pub fn new(session : IrcSession) -> MessageProcessor {
+	pub fn new(sender : Sender<AppAction>, session : IrcSession) -> MessageProcessor {
 		MessageProcessor {
-			temp_name_list : Vec::new(),
-			session : session
+			channels_users : HashMap::new(),
+			session : session,
+			sender : sender
 		}
 	}
 
-	pub fn process_message(self : &mut Self, message : &mut Message) -> bool {
+	pub fn process_message(self : &mut Self, message_in : &Message) -> bool {
+		let mut message = message_in.clone();
+		//println!("Message: {:?}", message);
 		match message.command {
 			Command::LetterCommand {
 				command : ref command_string
@@ -26,26 +33,25 @@ impl MessageProcessor {
 				let command_str = command_string.to_lowercase();
 				if (command_str == "privmsg") {
 					//display a message
+				}else if (command_str == "join") {
+					self.join_channel(&message.parameters);
 				}
-				//or just do nothing
-
 			},
 			Command::DigitCommand {command : ref numeric}=> {
 				match numeric.as_ref() {
 					"353" => {
 						//parse list of names
-						self.process_names_list(&mut message.parameters);
+						self.process_names_list(&mut message.parameters.clone());
 					},
-					"376" => {
-						//do something with values...
-						println!("Current users: {:?}", self.temp_name_list);
-						self.temp_name_list = Vec::new();
+					"366" => {
+						self.flush_names();
+						//self.temp_name_list = Vec::new();
 					},
 					"401" => println!("No such username"),
 					"403" => println!("Server name does not exist"),
 					"404" => println!("That channel does not exist"),
 					"405" => println!("You have joined too many channels"),
-					_ => println!("Couldn't work out the poopy numeric command from server: '{}'", numeric)
+					_ => println!("Couldn't work out command from server: '{}'", numeric)
 				}
 			} 
 		}
@@ -53,15 +59,53 @@ impl MessageProcessor {
 	}
 
 	fn process_names_list(self : &mut Self, names : &mut Vec<String>) {
-		if (names.len() < 2) {
+		if (names.len() < 3) {
 			return;
 		}
 
-		for nick in names[2].split(" ") {
-			self.temp_name_list.push(User {
+		let channel = &names[2];
+		let mut nicks = Vec::new();
+
+		for nick in names[3].split(" ") {
+			nicks.push(User {
 				nick : nick.to_string()
 			});
 		}
+
+		match self.channels_users.get_mut(channel) {
+			None => {
+				//do nothing
+			}
+			Some(existingList) => {
+				existingList.append(&mut nicks);
+				return;
+			}
+		}
+
+		self.channels_users.insert(channel.clone(), nicks);
+	}
+
+	fn flush_names(self : &mut Self) {
+		for (channel, users) in self.channels_users.iter() {
+			self.session.clear_users(channel);
+			self.session.add_users(channel, &users);
+		}
+	}
+
+	fn join_channel(self : &mut Self, parameters : &Vec<String>) {
+		if parameters.len() < 1 {
+			return;
+		}
+
+		let chan = &parameters[0];
+
+		self.session.set_active_channel(chan);
+
+		self.sender.send(AppAction::Transmit(Message {
+			command : Command::LetterCommand{command : "NAMES".to_string()},
+			parameters : vec![chan.clone()],
+			prefix : None
+		}));
 	}
 
 }

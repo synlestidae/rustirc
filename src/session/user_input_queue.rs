@@ -100,12 +100,6 @@ impl InputQueue {
 			        if (message.is_some()) {
 			        	self.sender.send(message.unwrap());
 
-			        	self.sender.send(AppAction::Transmit(Message {
-			        		prefix : None,
-			        		command : Command::LetterCommand{command : "NAMES".to_string()},
-			        		parameters : vec!["##prolog".to_string()]
-			        	}));
-
 			        }else{
 			        	println!("Invalid command sequence {}", input);
 			        }
