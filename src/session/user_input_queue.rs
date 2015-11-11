@@ -33,7 +33,7 @@ fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 		index += 1;
 	}else if (index <= line.len() && line[index] != '/') {
 		//parse a message!
-		return Ok(AppAction::Transmit(Message {
+		return Ok(AppAction::UserInput(Message {
 			prefix : None,
 			command : Command::LetterCommand {
 				command : "PRIVMSG".to_string()
@@ -75,7 +75,7 @@ fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 			parameters : vec![channel]
 		};
 
-		let action = AppAction::Transmit(message);
+		let action = AppAction::UserInput(message);
 
 
 		log("Finished parsing");

@@ -5,10 +5,6 @@ pub struct RecvMessageQueue {
 	recv : Receiver<Result<Message, QueueControlMessage>>
 }
 
-//pub struct SendMessageQueue {
-//	sender : Sender<Result<Message, QueueControlMessage>>
-//}
-
 impl RecvMessageQueue {
 	pub fn new(recv : Receiver<Result<Message, QueueControlMessage>>) -> RecvMessageQueue {
 		RecvMessageQueue {

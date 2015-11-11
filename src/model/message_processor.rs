@@ -3,28 +3,45 @@ use model::ircsession::{IrcSession, IrcChannel};
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use session::message_queue::{AppAction};
-
+use std::net::TcpStream;
+use std::sync::mpsc::Receiver;
+use std::io::{BufWriter};
+use std::io::Write;
 use session::message::{Message, Command, Prefix};
 
 pub struct MessageProcessor {
 	session : IrcSession,
 	channels_users : HashMap<String, Vec<User>>,
-	sender : Sender<AppAction>
+
+	//the data moving stuff
+	receiver : Receiver<AppAction>, 
+	socket_writer : BufWriter<TcpStream>
 }
 
 impl MessageProcessor {
-
-	pub fn new(sender : Sender<AppAction>, session : IrcSession) -> MessageProcessor {
+	pub fn new(receiver : Receiver<AppAction>, session : IrcSession, socket_writer : BufWriter<TcpStream>) -> MessageProcessor {
 		MessageProcessor {
-			channels_users : HashMap::new(),
 			session : session,
-			sender : sender
+			channels_users : HashMap::new(),
+			receiver : receiver, 		
+			socket_writer : socket_writer
+		}
+	}
+ 
+	pub fn run(self : &mut Self) {
+		loop {
+			match self.receiver.recv() {
+				Ok(AppAction::Transmit(ref message)) => {},
+				Ok(AppAction::UserInput(ref message)) => {},
+				Ok(AppAction::NetworkInput(ref message)) => {},
+				_ => {}
+			}
 		}
 	}
 
-	pub fn process_message(self : &mut Self, message_in : &Message) -> bool {
+	fn process_message(self : &mut Self, message_in : &Message) -> bool {
 		let mut message = message_in.clone();
-		println!("Message: {:?}", message);
+		
 		match message.command {
 			Command::LetterCommand {
 				command : ref command_string
@@ -100,11 +117,13 @@ impl MessageProcessor {
 
 		self.session.set_active_channel(chan);
 
-		self.sender.send(AppAction::Transmit(Message {
+		let message = Message {
 			command : Command::LetterCommand{command : "NAMES".to_string()},
 			parameters : vec![chan.clone()],
 			prefix : None
-		}));
+		};
+
+		self.socket_writer.write_all(&message.to_message_bytes());
 	}
 
 	fn process_private_message(self : &mut Self, message : &Message) {

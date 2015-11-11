@@ -53,16 +53,6 @@ impl IrcSession {
 		println!("\r{}: {}", target, message_text);
 		print!("> ");
 		stdout_obj.flush();
-
-		/*match self._get_channel_index(target) {
-			Some(i) => {
-				self.active_channels[i].messages.push(MessageLine {
-					sender : target.clone(),
-					body : message_text.clone()
-				})
-			},
-			None => {}
-		}*/
  	}
 
 	fn _get_channel_index(self : &mut Self, channel_name : &ChannelName) -> Option<usize> {

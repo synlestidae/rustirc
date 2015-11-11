@@ -11,8 +11,8 @@ use std::io;
 mod session;
 mod model;
 
-use session::message::{Message, Prefix, Command, QueueControlMessage, nick_message, user_message, join_channel_message};
-use session::message_queue::{AppAction, WritingQueue};
+use session::message::*;
+use session::message_queue::{AppAction};
 use session::user_input_queue::{InputQueue};
 use session::message_parser::{parse_message};
 use session::log::{log};
@@ -58,29 +58,22 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	let user = nickname.clone();
 
 	let nick_message = nick_message(servername.clone(), nickname.clone());
-	let user_message = user_message(servername.clone(), user, String::from("Harry Potter"));
+	let user_message = user_message(servername.clone(), user, 
+		String::from("Harry Potter"));
 
 	let (action_tx, action_rx) = channel::<AppAction>();
 
 	let mut socket_reader = BufReader::new(stream.try_clone().unwrap());
 	let mut socket_writer = BufWriter::new(stream.try_clone().unwrap());
 
-	let mut writingQueue = WritingQueue {
-		receiver : action_rx,
-		stream : socket_writer
-	};
+	action_tx.send(AppAction::Transmit(nick_message));
+	action_tx.send(AppAction::Transmit(user_message));
 
 	let mut action_tx_clone = action_tx.clone();
-
 	thread::spawn(|| {
 		InputQueue::new(action_tx_clone).run();
 	});
-
-	action_tx.send(AppAction::Transmit(nick_message));
-	action_tx.send(AppAction::Transmit(user_message));
 	
-	let mut session_processor = MessageProcessor::new(action_tx, IrcSession::new(&nickname));
-
 	thread::spawn(move || {
 		loop {
 			let mut line = String::new();
@@ -89,9 +82,14 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 			
 			let message = parse_message(&line).unwrap();
 
-			session_processor.process_message(&message);
+			action_tx.send(AppAction::NetworkInput(message));
+
+			()
 		}
 	});
 
-	writingQueue.run();
+	let mut session_processor = MessageProcessor::new(action_rx, 
+		IrcSession::new(&nickname), socket_writer);
+
+	session_processor.run();
 }
