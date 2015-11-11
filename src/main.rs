@@ -83,9 +83,8 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 			let message = parse_message(&line).unwrap();
 
 			action_tx.send(AppAction::NetworkInput(message));
-
-			()
 		}
+		()
 	});
 
 	let mut session_processor = MessageProcessor::new(action_rx, 
