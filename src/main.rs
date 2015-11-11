@@ -70,6 +70,7 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 	action_tx.send(AppAction::Transmit(user_message));
 
 	let mut action_tx_clone = action_tx.clone();
+	
 	thread::spawn(|| {
 		InputQueue::new(action_tx_clone).run();
 	});

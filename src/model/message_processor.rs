@@ -31,15 +31,24 @@ impl MessageProcessor {
 	pub fn run(self : &mut Self) {
 		loop {
 			match self.receiver.recv() {
-				Ok(AppAction::Transmit(ref message)) => {},
-				Ok(AppAction::UserInput(ref message)) => {},
-				Ok(AppAction::NetworkInput(ref message)) => {},
+				Ok(AppAction::Transmit(ref message)) => {
+					//simply forward the message onward
+				},
+				Ok(AppAction::UserInput(ref message)) => {
+					//do something to the input
+					self.socket_writer.write_all(&message.to_message_bytes());
+				},
+				Ok(AppAction::NetworkInput(ref message)) => {
+					self.process_network_message(message);
+				},
 				_ => {}
 			}
 		}
 	}
 
-	fn process_message(self : &mut Self, message_in : &Message) -> bool {
+	//fn pr
+
+	fn process_network_message(self : &mut Self, message_in : &Message) -> bool {
 		let mut message = message_in.clone();
 		
 		match message.command {

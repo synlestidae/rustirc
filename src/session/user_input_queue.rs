@@ -18,10 +18,6 @@ fn parse_input_line(line : &String) -> Option<AppAction> {
 	}
 }
 
-// /join
-// Type /join #channelname -- to join a channel of your choice
-// Example: /join #bossmom
-
 fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 	log(&format!("Parsing {}", line_string));
 
