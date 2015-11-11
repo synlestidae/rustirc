@@ -5,6 +5,8 @@ use session::message_queue::{AppAction};
 use session::message::{Message, Prefix, Command};
 use session::log::{log};
 
+use std::io::Write;
+
 pub struct InputQueue {
 	sender : Sender<AppAction>
 }
@@ -29,7 +31,17 @@ fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 
 	if (index <= line.len() && line[index] == '/') {
 		index += 1;
-	}else{
+	}else if (index <= line.len() && line[index] != '/') {
+		//parse a message!
+		return Ok(AppAction::Transmit(Message {
+			prefix : None,
+			command : Command::LetterCommand {
+				command : "PRIVMSG".to_string()
+			},
+			parameters : vec![line_string.trim().to_string()]
+		}));
+	}
+	else{
 		log(&format!("String is empty or does not begin with slash"));
 		return Err(());
 	}
@@ -96,6 +108,7 @@ impl InputQueue {
 			let mut stdin_obj = io::stdin();
 			let mut stdout_obj = io::stdout();
 			print!("> ");
+			stdout_obj.flush();
 
 			match stdin_obj.read_line(&mut input) {
 			    Ok(n) => {

@@ -1,5 +1,8 @@
 use model::smallobjects::{User, MessageLine, ChannelName};
 
+use std::io;
+use std::io::Write;
+
 pub struct IrcSession {
 	pub me : User,
 	active_channels : Vec<IrcChannel>,
@@ -46,7 +49,11 @@ impl IrcSession {
 	}
 
 	pub fn handle_message(self : &mut Self, target : &String, message_text : &String) {
-		println!("{}: {}", target, message_text);
+		let mut stdout_obj = io::stdout();
+		println!("\r{}: {}", target, message_text);
+		print!("> ");
+		stdout_obj.flush();
+
 		/*match self._get_channel_index(target) {
 			Some(i) => {
 				self.active_channels[i].messages.push(MessageLine {

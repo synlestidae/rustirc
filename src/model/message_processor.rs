@@ -24,12 +24,11 @@ impl MessageProcessor {
 
 	pub fn process_message(self : &mut Self, message_in : &Message) -> bool {
 		let mut message = message_in.clone();
-		//println!("Message: {:?}", message);
+		println!("Message: {:?}", message);
 		match message.command {
 			Command::LetterCommand {
 				command : ref command_string
 			} => {
-				//do something with letter command
 				let command_str = command_string.to_lowercase();
 				if (command_str == "privmsg") {
 					self.process_private_message(message);

@@ -4,6 +4,7 @@ use session::message::{Message, QueueControlMessage};
 use session::log::{log};
 use std::io::{BufWriter};
 use std::io::Write;
+use std::io;
 
 pub enum AppAction {
 	Terminate,
