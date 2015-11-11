@@ -36,7 +36,7 @@ fn prompt(prompt_text : &str) -> String {
 }
 
 fn main() {
-	let host = "irc.mozilla.org";
+	let host = "irc.freenode.net";
 	let port = 6667;
 
 	let connection_string = (host,port)	;

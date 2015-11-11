@@ -32,7 +32,7 @@ impl MessageProcessor {
 				//do something with letter command
 				let command_str = command_string.to_lowercase();
 				if (command_str == "privmsg") {
-					//display a message
+					self.process_private_message(message);
 				}else if (command_str == "join") {
 					self.join_channel(&message.parameters);
 				}
@@ -106,6 +106,29 @@ impl MessageProcessor {
 			parameters : vec![chan.clone()],
 			prefix : None
 		}));
+	}
+
+	fn process_private_message(self : &mut Self, message : &Message) {
+		if message.parameters.len() < 2 {
+			return;
+		}
+
+		println!("Params: {:?}", message);
+
+		let params = &message.parameters;
+
+		match message.prefix {
+			Some(Prefix::ServerNamePrefix{name : prefix}) => {
+				let mut name = String::new();
+				let mut index : usize = 0;
+				while (prefix[index] != '!') {
+					name.push(prefix[index]);
+				} 
+				self.session.handle_message(&name, &params[params.len() - 1]);
+
+			},
+			_ => {}
+		}
 	}
 
 }

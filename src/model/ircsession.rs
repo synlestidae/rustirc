@@ -45,6 +45,19 @@ impl IrcSession {
 		println!("Joined {}", channel);
 	}
 
+	pub fn handle_message(self : &mut Self, target : &String, message_text : &String) {
+		println!("{}: {}", target, message_text);
+		/*match self._get_channel_index(target) {
+			Some(i) => {
+				self.active_channels[i].messages.push(MessageLine {
+					sender : target.clone(),
+					body : message_text.clone()
+				})
+			},
+			None => {}
+		}*/
+ 	}
+
 	fn _get_channel_index(self : &mut Self, channel_name : &ChannelName) -> Option<usize> {
 		let mut index = 0; 
 		let mut index_of_channel : Option<usize> = None;

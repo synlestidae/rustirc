@@ -49,17 +49,14 @@ impl Message {
 
 	fn command_string(self : &Self) -> String {
 		match self.command {
-			Command::LetterCommand {ref command} => command.clone(),
+			Command::LetterCommand {ref command} => command.clone().to_uppercase(),
 			Command::DigitCommand {ref command} => panic!("Not ready for digit commands yet")
 		}
 	}
 
 	fn params_string(self : &Self) -> String {
-
-
 		if self.parameters.len() > 0 {
 			let mut out_string = String::new();
-
 			for (i, p) in self.parameters.iter().enumerate() {
 				if (i != 0) {
 					out_string.push(' ');
