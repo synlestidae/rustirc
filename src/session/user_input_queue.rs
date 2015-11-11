@@ -94,6 +94,9 @@ impl InputQueue {
 		loop {
 			let mut input = String::new();
 			let mut stdin_obj = io::stdin();
+			let mut stdout_obj = io::stdout();
+			print!("> ");
+
 			match stdin_obj.read_line(&mut input) {
 			    Ok(n) => {
 			        let message = parse_input_line(&input);

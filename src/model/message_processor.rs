@@ -113,18 +113,13 @@ impl MessageProcessor {
 			return;
 		}
 
-		println!("Params: {:?}", message);
-
 		let params = &message.parameters;
 
 		match message.prefix {
-			Some(Prefix::ServerNamePrefix{name : prefix}) => {
-				let mut name = String::new();
-				let mut index : usize = 0;
-				while (prefix[index] != '!') {
-					name.push(prefix[index]);
-				} 
-				self.session.handle_message(&name, &params[params.len() - 1]);
+			Some(Prefix::ServerNamePrefix{name : ref prefix}) => {
+				let bits = prefix.split("!").collect::<Vec<&str>>();
+				let name = bits[0];
+				self.session.handle_message(&name.to_string(), &params[params.len() - 1]);
 
 			},
 			_ => {}
