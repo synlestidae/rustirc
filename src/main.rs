@@ -81,9 +81,12 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 
 			socket_reader.read_line(&mut line);
 			
-			let message = parse_message(&line).unwrap();
-
-			action_tx.send(AppAction::NetworkInput(message));
+			if (line.len() > 0) {
+				let message = parse_message(&line);
+				if message.is_ok() {
+					action_tx.send(AppAction::NetworkInput(message.unwrap()));
+				}
+			}
 		}
 		()
 	});

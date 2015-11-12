@@ -48,6 +48,10 @@ impl IrcSession {
 		println!("Joined {}", channel);
 	}
 
+	pub fn get_active_channel(self : &Self) -> Option<String> {
+		return self.active_channel.clone();
+	}
+
 	pub fn handle_message(self : &mut Self, target : &String, message_text : &String) {
 		let mut stdout_obj = io::stdout();
 		println!("\r{}: {}", target, message_text);

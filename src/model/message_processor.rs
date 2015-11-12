@@ -33,20 +33,44 @@ impl MessageProcessor {
 			match self.receiver.recv() {
 				Ok(AppAction::Transmit(ref message)) => {
 					//simply forward the message onward
+					//println!("Forwarding: {:?}", message);
+					self.socket_writer.write_all(&message.to_message_bytes());
 				},
 				Ok(AppAction::UserInput(ref message)) => {
 					//do something to the input
-					self.socket_writer.write_all(&message.to_message_bytes());
+					//then forward
+					//println!("Forwarding: {:?}", message);
+					self.process_user_message(message);
 				},
 				Ok(AppAction::NetworkInput(ref message)) => {
+					//println!("From network: {:?}", message);
 					self.process_network_message(message);
 				},
 				_ => {}
 			}
+			self.socket_writer.flush();
 		}
 	}
 
-	//fn pr
+	fn process_user_message(self : &mut Self, message : &Message) {
+		let mut new_params = message.parameters.clone();
+
+		let channel = self.session.get_active_channel();
+
+		if (!channel.is_some()) {
+			return;
+		}		
+
+		new_params.insert(0, channel.unwrap());
+
+		let modified_message = Message {
+			prefix : message.prefix.clone(),
+			command : message.command.clone(),
+			parameters : new_params
+		};
+
+		self.socket_writer.write_all(&modified_message.to_message_bytes());
+	}
 
 	fn process_network_message(self : &mut Self, message_in : &Message) -> bool {
 		let mut message = message_in.clone();
@@ -56,21 +80,25 @@ impl MessageProcessor {
 				command : ref command_string
 			} => {
 				let command_str = command_string.to_lowercase();
-				if (command_str == "privmsg") {
+
+				if (command_str == "ping") {
+					self.pong();
+				}
+				else if (command_str == "privmsg") {
 					self.process_private_message(message);
 				}else if (command_str == "join") {
 					self.join_channel(&message.parameters);
+				}else{
+					return false;
 				}
 			},
 			Command::DigitCommand {command : ref numeric}=> {
 				match numeric.as_ref() {
 					"353" => {
-						//parse list of names
 						self.process_names_list(&mut message.parameters.clone());
 					},
 					"366" => {
 						self.flush_names();
-						//self.temp_name_list = Vec::new();
 					},
 					"401" => println!("No such username"),
 					"403" => println!("Server name does not exist"),
@@ -81,6 +109,16 @@ impl MessageProcessor {
 			} 
 		}
 		return false;
+	}
+
+	fn pong(self : &mut Self) {
+		self.socket_writer.write_all(&(Message{
+			prefix : None,
+			command : Command::LetterCommand{
+				command : "PONG".to_string()
+			},
+			parameters : Vec::new()
+		}).to_message_bytes());
 	}
 
 	fn process_names_list(self : &mut Self, names : &mut Vec<String>) {

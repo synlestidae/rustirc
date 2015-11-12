@@ -76,13 +76,13 @@ impl Message {
 	}
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Prefix {
 	ServerNamePrefix {name : String},
 	NickNamePrefix {name : String, parts : Option<(String, String)> }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Command {
 	LetterCommand {command : String},
 	DigitCommand {command : String}

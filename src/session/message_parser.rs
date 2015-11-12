@@ -11,6 +11,10 @@ pub fn parse_message(message_str : &String) -> Result<Message, (String, usize)> 
 	let mut index : usize = 0;
 	let mut prefix = None;
 
+	if (chars.len() == 0) {
+		return Err(("Empty string".to_string(), 0));
+	}
+
 	if (chars.len() > 0 && chars[0] == ':') {
 		prefix = Some(try!(parse_prefix(&chars, &mut index)));
 	}
