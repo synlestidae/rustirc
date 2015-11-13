@@ -1,13 +1,15 @@
 use model::smallobjects::User;
 use model::ircsession::{IrcSession, IrcChannel};
 use std::collections::HashMap;
-use std::sync::mpsc::Sender;
-use session::message_queue::{AppAction};
 use std::net::TcpStream;
+use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
+use session::message_queue::{AppAction};
+use session::message::{Message, Command, Prefix};
+use std::io;
 use std::io::{BufWriter};
 use std::io::Write;
-use session::message::{Message, Command, Prefix};
+
 
 pub struct MessageProcessor {
 	session : IrcSession,
@@ -16,6 +18,12 @@ pub struct MessageProcessor {
 	//the data moving stuff
 	receiver : Receiver<AppAction>, 
 	socket_writer : BufWriter<TcpStream>
+}
+
+fn redo_prompt() {
+	let mut stdout = io::stdout();
+	print!("> ");
+	stdout.flush();
 }
 
 impl MessageProcessor {
@@ -33,17 +41,12 @@ impl MessageProcessor {
 			match self.receiver.recv() {
 				Ok(AppAction::Transmit(ref message)) => {
 					//simply forward the message onward
-					//println!("Forwarding: {:?}", message);
 					self.socket_writer.write_all(&message.to_message_bytes());
 				},
 				Ok(AppAction::UserInput(ref message)) => {
-					//do something to the input
-					//then forward
-					//println!("Forwarding: {:?}", message);
 					self.process_user_message(message);
 				},
 				Ok(AppAction::NetworkInput(ref message)) => {
-					//println!("From network: {:?}", message);
 					self.process_network_message(message);
 				},
 				_ => {}
@@ -53,12 +56,28 @@ impl MessageProcessor {
 	}
 
 	fn process_user_message(self : &mut Self, message : &Message) {
+		match message.command {
+			Command::LetterCommand {
+				command : ref command
+			} => {
+				if command.to_lowercase() == "privmsg" {
+					self.process_channel_message(message);
+					return;
+				} 
+			},
+			_ => {}
+		}
+
+		self.socket_writer.write_all(&message.to_message_bytes());
+	}
+
+	fn process_channel_message(self : &mut Self, message : &Message) {
 		let mut new_params = message.parameters.clone();
 
 		let channel = self.session.get_active_channel();
 
 		if (!channel.is_some()) {
-			return;
+			panic!("No channel!");
 		}		
 
 		new_params.insert(0, channel.unwrap());
@@ -100,11 +119,11 @@ impl MessageProcessor {
 					"366" => {
 						self.flush_names();
 					},
-					"401" => println!("No such username"),
-					"403" => println!("Server name does not exist"),
-					"404" => println!("That channel does not exist"),
-					"405" => println!("You have joined too many channels"),
-					_ => println!("Couldn't work out command from server: '{}'", numeric)
+					"401" => {println!("\rNo such username"); redo_prompt()},
+					"403" => {println!("\rServer name does not exist"); redo_prompt()},
+					"404" => {println!("\rThat channel does not exist"); redo_prompt()},
+					"405" => {println!("\rYou have joined too many channels"); redo_prompt()},
+					_ => {/*println!("\rCouldn't work out command from server: '{}'", numeric)*/}
 				}
 			} 
 		}
@@ -171,6 +190,8 @@ impl MessageProcessor {
 		};
 
 		self.socket_writer.write_all(&message.to_message_bytes());
+
+		println!("\rJoined {}", chan);
 	}
 
 	fn process_private_message(self : &mut Self, message : &Message) {
@@ -190,5 +211,4 @@ impl MessageProcessor {
 			_ => {}
 		}
 	}
-
 }

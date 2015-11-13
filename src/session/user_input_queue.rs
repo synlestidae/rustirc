@@ -19,8 +19,6 @@ fn parse_input_line(line : &String) -> Option<AppAction> {
 }
 
 fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
-	log(&format!("Parsing {}", line_string));
-
 	let mut line : Vec<char> = line_string.chars().collect();
 
 	let mut index = 0;
@@ -53,8 +51,6 @@ fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 		return Err(());
 	}
 
-	log(&format!("Command is {}", command));
-
 	eat_char(&mut line, ' ', &mut index);
 
 	if (command == "join".to_string()) {
@@ -73,8 +69,6 @@ fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
 
 		let action = AppAction::UserInput(message);
 
-
-		log("Finished parsing");
 		return Ok(action);
 	}else{
 		log(&format!("Unknown command {}", command));
@@ -103,7 +97,7 @@ impl InputQueue {
 			let mut input = String::new();
 			let mut stdin_obj = io::stdin();
 			let mut stdout_obj = io::stdout();
-			print!("> ");
+			print!("\n> ");
 			stdout_obj.flush();
 
 			match stdin_obj.read_line(&mut input) {

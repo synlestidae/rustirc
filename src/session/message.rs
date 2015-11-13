@@ -22,13 +22,9 @@ impl Message {
 		if prefix.len() == 0 {
 			let formatted_message = format!("{} {}\r\n", command, parameters);
 
-			print!("{}", formatted_message);
-
 			return formatted_message;
 		}else{
 			let formatted_message = format!("{} {} {}\r\n", prefix, command, parameters);
-
-			print!("{}", formatted_message);
 
 			return formatted_message;
 		}

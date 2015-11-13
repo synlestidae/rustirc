@@ -54,7 +54,7 @@ impl IrcSession {
 
 	pub fn handle_message(self : &mut Self, target : &String, message_text : &String) {
 		let mut stdout_obj = io::stdout();
-		println!("\r{}: {}", target, message_text);
+		println!("\r{}: {}", target, message_text.trim());
 		print!("> ");
 		stdout_obj.flush();
  	}
