@@ -11,6 +11,7 @@ use std::io;
 mod session;
 mod model;
 mod view;
+mod main_loop;
 
 use session::message::*;
 use session::message_queue::{AppAction};
@@ -20,6 +21,8 @@ use session::log::{log};
 
 use model::ircsession::{IrcSession, IrcChannel};
 use model::message_processor::{MessageProcessor};
+
+extern crate mio;
 
 fn prompt(prompt_text : &str) -> String {
 	let stdin = io::stdin();
