@@ -3,6 +3,8 @@ use model::smallobjects::{User, MessageLine, ChannelName};
 use std::io;
 use std::io::Write;
 
+use view::out::{print_str};
+
 pub struct IrcSession {
 	pub me : User,
 	active_channels : Vec<IrcChannel>,
@@ -10,6 +12,7 @@ pub struct IrcSession {
 }
 
 pub struct IrcChannel {
+	previous_users : Vec<User>,
 	users : Vec<User>,
 	messages : Vec<MessageLine>,
 	channelName : ChannelName
@@ -25,27 +28,33 @@ impl IrcSession {
 		}
 	}
 
-	pub fn clear_users(self : &mut Self, channel_name : &ChannelName) {
-		match (self._get_channel_index(&channel_name)) {
-			Some(i) => self.active_channels[i].users = Vec::new(),
-			None => {},
+	pub fn clear_users(self : &mut Self, channel_name : &ChannelName) -> Vec<User> {
+		let mut new_users = Vec::new();
+		if let Some(i) = self._get_channel_index(&channel_name) {
+			for user in (&self.active_channels[i]).users {
+				if !(&self.active_channels[i].previous_users).contains(&user) {
+					new_users.push(user.clone());
+				}
+			}
+			self.active_channels[i].users = Vec::new();
 		}
+		return new_users;
 	}
 
 	pub fn add_users(self : &mut Self, channel_name : &ChannelName, 
 		users : &Vec<User>) {
-			match (self._get_channel_index(channel_name)) {
-				Some(i) => {
-					let mut channel_users = &mut self.active_channels[i].users;
-					channel_users.append(&mut users.clone());
-				},
-				None => {}	
+		if let Some(i) = self._get_channel_index(channel_name) {
+			if self.active_channels[i].previous_users.len() == 0 {
+				self.active_channels[i].previous_users = self.active_channels[i].users.clone();
+			}
+			let mut channel_users = &mut self.active_channels[i].users;
+			channel_users.append(&mut users.clone());
 		}
 	}
 
 	pub fn set_active_channel(self : &mut Self, channel : &String) {
 		self.active_channel = Some(channel.clone());
-		println!("Joined {}", channel);
+		print_str(&format!("Joined {}", channel))
 	}
 
 	pub fn get_active_channel(self : &Self) -> Option<String> {
@@ -53,10 +62,7 @@ impl IrcSession {
 	}
 
 	pub fn handle_message(self : &mut Self, target : &String, message_text : &String) {
-		let mut stdout_obj = io::stdout();
-		println!("\r{}: {}", target, message_text.trim());
-		print!("> ");
-		stdout_obj.flush();
+		print_str(&format!("\r{}: {}", target, message_text.trim()));
  	}
 
 	fn _get_channel_index(self : &mut Self, channel_name : &ChannelName) -> Option<usize> {
@@ -81,29 +87,10 @@ impl IrcSession {
 impl IrcChannel {
 	pub fn new(name : String) -> IrcChannel {
 		return IrcChannel {
+			previous_users : Vec::new(),
 			users : Vec::new(),
 			messages : Vec::new(),
 			channelName : name
 		}
-	}
-
-	pub fn add_message(line : MessageLine) {
-		panic!("Not implemented");
-	}
-
-	pub fn add_user(user : User) {
-		panic!("Not implemented");
-	}
-
-	pub fn add_users(channel : ChannelName, users : Vec<User>) {
-		panic!("Not implemented");
-	}
-
-	pub fn remove_user(user : User) {
-		panic!("Not implemented");
-	}
-
-	pub fn remove_users(user : Vec<User>) {
-
 	}
 }

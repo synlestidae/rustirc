@@ -6,6 +6,7 @@ use session::message::{Message, Prefix, Command};
 use session::log::{log};
 
 use std::io::Write;
+use view::out::prompt;
 
 pub struct InputQueue {
 	sender : Sender<AppAction>
@@ -97,20 +98,15 @@ impl InputQueue {
 			let mut input = String::new();
 			let mut stdin_obj = io::stdin();
 			let mut stdout_obj = io::stdout();
-			print!("\n> ");
 			stdout_obj.flush();
 
-			match stdin_obj.read_line(&mut input) {
-			    Ok(n) => {
-			        let message = parse_input_line(&input);
-			        if (message.is_some()) {
-			        	self.sender.send(message.unwrap());
+			let input = prompt();
+			let message = parse_input_line(&input);
 
-			        }else{
-			        	println!("Invalid command sequence {}", input);
-			        }
-			    }
-			    Err(error) => {},
+			if (message.is_some()) {
+				self.sender.send(message.unwrap());
+			}else{
+				println!("Invalid command sequence {}", input);
 			}
 		}
 	}

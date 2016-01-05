@@ -10,6 +10,7 @@ use std::io;
 
 mod session;
 mod model;
+mod view;
 
 use session::message::*;
 use session::message_queue::{AppAction};

@@ -9,6 +9,7 @@ use session::message::{Message, Command, Prefix};
 use std::io;
 use std::io::{BufWriter};
 use std::io::Write;
+use view::out::print_str;
 
 
 pub struct MessageProcessor {
@@ -105,9 +106,11 @@ impl MessageProcessor {
 				}
 				else if (command_str == "privmsg") {
 					self.process_private_message(message);
-				}else if (command_str == "join") {
+				}
+				else if (command_str == "join") {
 					self.join_channel(&message.parameters);
-				}else{
+				}
+				else{
 					return false;
 				}
 			},
@@ -119,11 +122,11 @@ impl MessageProcessor {
 					"366" => {
 						self.flush_names();
 					},
-					"401" => {println!("\rNo such username"); redo_prompt()},
-					"403" => {println!("\rServer name does not exist"); redo_prompt()},
-					"404" => {println!("\rThat channel does not exist"); redo_prompt()},
-					"405" => {println!("\rYou have joined too many channels"); redo_prompt()},
-					_ => {/*println!("\rCouldn't work out command from server: '{}'", numeric)*/}
+					"401" => {print_str("\rNo such username"); redo_prompt()},
+					"403" => {print_str("\rServer name does not exist"); redo_prompt()},
+					"404" => {print_str("\rThat channel does not exist"); redo_prompt()},
+					"405" => {print_str("\rYou have joined too many channels"); redo_prompt()},
+					_ => {}
 				}
 			} 
 		}
@@ -190,8 +193,6 @@ impl MessageProcessor {
 		};
 
 		self.socket_writer.write_all(&message.to_message_bytes());
-
-		println!("\rJoined {}", chan);
 	}
 
 	fn process_private_message(self : &mut Self, message : &Message) {
