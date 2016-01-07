@@ -40,6 +40,8 @@ fn prompt(prompt_text : &str) -> String {
 }
 
 fn main() {
+	main_loop::main();
+	return;
 	let host = "irc.freenode.net";
 	let port = 6667;
 
@@ -95,8 +97,8 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 		()
 	});
 
-	let mut session_processor = MessageProcessor::new(action_rx, 
+	/*let mut session_processor = MessageProcessor::new(action_rx, 
 		IrcSession::new(&nickname), socket_writer);
 
-	session_processor.run();
+	session_processor.run();*/
 }

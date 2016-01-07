@@ -14,6 +14,8 @@ pub struct IrcSessionView {
 	current_channel : ChannelName
 }
 
+pub use session::user_input_queue::{parse_input_line};
+
 impl IrcSessionView {
 	
 }

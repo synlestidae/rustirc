@@ -6,6 +6,7 @@ use std::io::{BufWriter};
 use std::io::Write;
 use std::io;
 
+#[derive(Debug)]
 pub enum AppAction {
 	Terminate,
 	Transmit(Message),

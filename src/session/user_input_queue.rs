@@ -12,14 +12,14 @@ pub struct InputQueue {
 	sender : Sender<AppAction>
 }
 
-fn parse_input_line(line : &String) -> Option<AppAction> {
+pub fn parse_input_line(line : &str) -> Option<AppAction> {
 	match parse_command(line) {
 		Ok(action) => Some(action),
 		Err(_) => None
 	}
 }
 
-fn parse_command(line_string : &String) -> Result<AppAction, ()>  {
+fn parse_command(line_string : &str) -> Result<AppAction, ()>  {
 	let mut line : Vec<char> = line_string.chars().collect();
 
 	let mut index = 0;

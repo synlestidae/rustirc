@@ -19,11 +19,11 @@ pub struct IrcChannel {
 }
 
 impl IrcSession {
-	pub fn new(my_username : &String) -> IrcSession {
+	pub fn new(my_username : &str) -> IrcSession {
 		IrcSession {
 			active_channels : Vec::new(),
 			active_channel : None,
-			me : User { nick : my_username.clone()
+			me : User { nick : my_username.to_string()
 			}
 		}
 	}
@@ -31,7 +31,7 @@ impl IrcSession {
 	pub fn clear_users(self : &mut Self, channel_name : &ChannelName) -> Vec<User> {
 		let mut new_users = Vec::new();
 		if let Some(i) = self._get_channel_index(&channel_name) {
-			for user in (&self.active_channels[i]).users {
+			for user in &(&self.active_channels[i]).users {
 				if !(&self.active_channels[i].previous_users).contains(&user) {
 					new_users.push(user.clone());
 				}

@@ -14,10 +14,7 @@ use view::out::print_str;
 
 pub struct MessageProcessor {
 	session : IrcSession,
-	channels_users : HashMap<String, Vec<User>>,
-
-	//the data moving stuff
-	receiver : Receiver<AppAction>, 
+	channels_users : HashMap<String, Vec<User>>, 
 	socket_writer : BufWriter<TcpStream>
 }
 
@@ -28,32 +25,29 @@ fn redo_prompt() {
 }
 
 impl MessageProcessor {
-	pub fn new(receiver : Receiver<AppAction>, session : IrcSession, socket_writer : BufWriter<TcpStream>) -> MessageProcessor {
+	pub fn new(session : IrcSession, socket_writer : BufWriter<TcpStream>) -> MessageProcessor {
 		MessageProcessor {
 			session : session,
-			channels_users : HashMap::new(),
-			receiver : receiver, 		
+			channels_users : HashMap::new(),	
 			socket_writer : socket_writer
 		}
 	}
  
-	pub fn run(self : &mut Self) {
-		loop {
-			match self.receiver.recv() {
-				Ok(AppAction::Transmit(ref message)) => {
-					//simply forward the message onward
-					self.socket_writer.write_all(&message.to_message_bytes());
-				},
-				Ok(AppAction::UserInput(ref message)) => {
-					self.process_user_message(message);
-				},
-				Ok(AppAction::NetworkInput(ref message)) => {
-					self.process_network_message(message);
-				},
-				_ => {}
-			}
-			self.socket_writer.flush();
+	pub fn process_action(self : &mut Self, action : &AppAction) {
+		match action {
+			&AppAction::Transmit(ref message) => {
+				//simply forward the message onward
+				self.socket_writer.write_all(&message.to_message_bytes());
+			},
+			&AppAction::UserInput(ref message) => {
+				self.process_user_message(message);
+			},
+			&AppAction::NetworkInput(ref message) => {
+				self.process_network_message(message);
+			},
+			_ => {}
 		}
+		self.socket_writer.flush();
 	}
 
 	fn process_user_message(self : &mut Self, message : &Message) {
