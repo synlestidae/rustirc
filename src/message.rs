@@ -7,11 +7,6 @@ pub struct Message {
 	pub parameters : Vec<String>
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub enum QueueControlMessage {
-	TERMINATE
-}
-
 impl Message {
 	pub fn to_string(self : &Self) -> String {
 		let prefix = self.prefix_string();
@@ -82,51 +77,4 @@ pub enum Prefix {
 pub enum Command {
 	LetterCommand {command : String},
 	DigitCommand {command : String}
-}
-
-/*impl fmt::Display for Command {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    	match self {
-    		ref Command::LetterCommand {command : command} => write!(f, "{}", command),
-    		ref Command::DigitCommand {command : command} => write!(f, "{}", command)
-    	}
-    }
-}*/
-
-pub fn user_message(servername : String, user : String, realname : String) -> Message {
-	Message {
-		//prefix : Some(Prefix::ServerNamePrefix{
-		//	name : servername
-		//}),
-		prefix : None,
-		command : Command::LetterCommand {
-			command : String::from("USER")
-		},
-		parameters : vec![user, String::from("*"), String::from("8"), realname]
-	}
-}
-
-pub fn nick_message(servername : String, nick : String) -> Message {
-	Message {
-		//prefix : Some(Prefix::ServerNamePrefix{
-		//	name : servername
-		//}),
-		prefix : None,
-		command : Command::LetterCommand {
-			command : "NICK".to_string()
-		},
-		parameters : vec![nick]
-	}
-}
-
-pub fn join_channel_message(servername: String, channel_name : String) -> Message {
-	Message {
-		prefix : Some(Prefix::ServerNamePrefix {
-			name : servername
-		}),
-		command : Command::LetterCommand {
-			command : "JOIN".to_string()
-		},
-		parameters : vec![channel_name]
-	}
 }

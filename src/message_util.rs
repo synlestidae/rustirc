@@ -1,12 +1,37 @@
-use std::io;
-use std::sync::mpsc::{Sender};
-use session::message_queue::{AppAction};
+use message::{Message, Command, Prefix};
+use app_action::AppAction;
 
-use session::message::{Message, Prefix, Command};
-use session::log::{log};
+pub fn user_message(servername : String, user : String, realname : String) -> Message {
+	Message {
+		prefix : None,
+		command : Command::LetterCommand {
+			command : String::from("USER")
+		},
+		parameters : vec![user, String::from("*"), String::from("8"), realname]
+	}
+}
 
-use std::io::Write;
-use view::out::prompt;
+pub fn nick_message(servername : String, nick : String) -> Message {
+	Message {
+		prefix : None,
+		command : Command::LetterCommand {
+			command : "NICK".to_string()
+		},
+		parameters : vec![nick]
+	}
+}
+
+pub fn join_channel_message(servername: String, channel_name : String) -> Message {
+	Message {
+		prefix : Some(Prefix::ServerNamePrefix {
+			name : servername
+		}),
+		command : Command::LetterCommand {
+			command : "JOIN".to_string()
+		},
+		parameters : vec![channel_name]
+	}
+}
 
 pub fn parse_input_line(line : &str) -> Option<AppAction> {
 	match parse_command(line) {
@@ -33,7 +58,6 @@ fn parse_command(line_string : &str) -> Result<AppAction, ()>  {
 		}));
 	}
 	else{
-		log(&format!("String is empty or does not begin with slash"));
 		return Err(());
 	}
 
@@ -68,7 +92,6 @@ fn parse_command(line_string : &str) -> Result<AppAction, ()>  {
 
 		return Ok(action);
 	}else{
-		log(&format!("Unknown command {}", command));
 		return Err(());
 	}
 
@@ -81,29 +104,5 @@ fn eat_char(chars : &Vec<char>, c : char, expectedIndex: &mut usize) -> Result<c
 		return Ok(c);
 	}else{
 		return Err((format!("Expected '{}', got '{}' ", c, chars[*expectedIndex]), *expectedIndex));
-	}
-}
-
-impl InputQueue {
-	pub fn new(sender : Sender<AppAction>) -> InputQueue {
-		return InputQueue {sender : sender};
-	}
-
-	pub fn run(self : &mut Self) {
-		loop {
-			let mut input = String::new();
-			let mut stdin_obj = io::stdin();
-			let mut stdout_obj = io::stdout();
-			stdout_obj.flush();
-
-			let input = prompt();
-			let message = parse_input_line(&input);
-
-			if (message.is_some()) {
-				self.sender.send(message.unwrap());
-			}else{
-				println!("Invalid command sequence {}", input);
-			}
-		}
 	}
 }

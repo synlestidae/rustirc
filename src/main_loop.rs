@@ -13,8 +13,6 @@ use std::str::FromStr;
 
 use everything_handler::EverythingHandler;
 
-use model::{MessageProcessor, IrcSession};
-
 const NETWORK: Token = Token(0);
 const KEYBOARD: Token = Token(1);
 
@@ -73,8 +71,6 @@ fn start_session(host : &str, port_number : u16, nick : &str, name : &str) {
             handler_channel.send(KEYBOARD);
         }
     });
-
-    let session = IrcSession::new(nick);
 
     event_loop.register(&connection, NETWORK, EventSet::readable(),
                     PollOpt::edge()).unwrap();

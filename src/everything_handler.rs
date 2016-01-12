@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::net::{SocketAddr};
 use std::str::FromStr;
 
-use session::parse_input_line;
+use message_util::parse_input_line;
 
 const NETWORK: Token = Token(0);
 const KEYBOARD: Token = Token(1);

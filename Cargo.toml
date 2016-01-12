@@ -5,3 +5,4 @@ authors = ["Mate Antunovic <mate.a@blackpearlmail.com>"]
 
 [dependencies]
 mio = "0.5"
+log = "0.3.4"
