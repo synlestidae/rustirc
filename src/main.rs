@@ -12,6 +12,8 @@ mod session;
 mod model;
 mod view;
 mod main_loop;
+mod everything_handler;
+mod util;
 
 use session::message::*;
 use session::message_queue::{AppAction};
@@ -23,21 +25,6 @@ use model::ircsession::{IrcSession, IrcChannel};
 use model::message_processor::{MessageProcessor};
 
 extern crate mio;
-
-fn prompt(prompt_text : &str) -> String {
-	let stdin = io::stdin();
-	let mut stdout = io::stdout();
-
-	print!("{}", prompt_text);
-	stdout.flush();
-
-	let mut line = String::new();
-
-	stdin.lock().read_line(&mut line);
-
-	line = line.trim().to_string();
-	return line;
-}
 
 fn main() {
 	main_loop::main();
@@ -51,7 +38,7 @@ fn main() {
 
 	let mut stream_connect = TcpStream::connect(connection_string);
 
-	let mut nick = prompt("Please enter your nick: ").to_string();
+	let mut nick = util::prompt("Please enter your nick: ").to_string();
 
 	match stream_connect {
 		Err(_) => println!("Failed to connect. Goodbye."),
@@ -96,9 +83,4 @@ fn begin_chatting(nickname : String, stream : &mut TcpStream) {
 		}
 		()
 	});
-
-	/*let mut session_processor = MessageProcessor::new(action_rx, 
-		IrcSession::new(&nickname), socket_writer);
-
-	session_processor.run();*/
 }
