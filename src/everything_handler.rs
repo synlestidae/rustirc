@@ -16,14 +16,21 @@ use message_util::parse_input_line;
 const NETWORK: Token = Token(0);
 const KEYBOARD: Token = Token(1);
 
-pub struct EverythingHandler(pub mpsc::Receiver<String>, pub Box<BufReader<TcpStream>>);
+pub struct EverythingHandler(pub mpsc::Receiver<String>, pub Box<TcpStream>);
 
 impl EverythingHandler {
     fn handle_action(&mut self, token : Token) {
+        let mut buf = Vec::with_capacity(250);
         let action = match token {
             NETWORK => {
-                let mut line = String::new();
-                (*self.1).read_line(&mut line);
+                match (*self.1).try_read(&mut buf) {
+                    Ok(_) => {
+                        if (buf.len() != 0) {
+                            println!("Got: {:?}", buf);
+                        }
+                    },
+                    Err(err) => println!("Some error: {:?}", err)   
+                }
                 None
             },
             KEYBOARD => {

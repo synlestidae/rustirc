@@ -1,35 +1,34 @@
 use message::{Message, Command, Prefix};
 use app_action::AppAction;
 
-pub fn user_message(servername : String, user : String, realname : String) -> Message {
+pub fn user_message(user : &str, realname : &str) -> Message {
 	Message {
 		prefix : None,
 		command : Command::LetterCommand {
 			command : String::from("USER")
 		},
-		parameters : vec![user, String::from("*"), String::from("8"), realname]
+		parameters : vec![user.to_string(), String::from("*"), 
+			String::from("8"), realname.to_string()]
 	}
 }
 
-pub fn nick_message(servername : String, nick : String) -> Message {
+pub fn nick_message(nick : &str) -> Message {
 	Message {
 		prefix : None,
 		command : Command::LetterCommand {
 			command : "NICK".to_string()
 		},
-		parameters : vec![nick]
+		parameters : vec![nick.to_string()]
 	}
 }
 
-pub fn join_channel_message(servername: String, channel_name : String) -> Message {
+pub fn join_channel_message(channel_name : &str) -> Message {
 	Message {
-		prefix : Some(Prefix::ServerNamePrefix {
-			name : servername
-		}),
+		prefix : None,
 		command : Command::LetterCommand {
 			command : "JOIN".to_string()
 		},
-		parameters : vec![channel_name]
+		parameters : vec![channel_name.to_string()]
 	}
 }
 

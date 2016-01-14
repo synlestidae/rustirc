@@ -18,7 +18,8 @@ impl Message {
 			let formatted_message = format!("{} {}\r\n", command, parameters);
 
 			return formatted_message;
-		}else{
+		}
+		else {
 			let formatted_message = format!("{} {} {}\r\n", prefix, command, parameters);
 
 			return formatted_message;
@@ -27,6 +28,10 @@ impl Message {
 
 	pub fn to_message_bytes(self : &Self) -> Vec<u8> {
 		return self.to_string().into_bytes();
+	}
+
+	pub fn to_message_bytes_rn(self : &Self) -> Vec<u8> {
+		return format!("{}\r\n", self.to_string()).into_bytes();
 	}
 
 	fn prefix_string(self:&Self) -> String {
