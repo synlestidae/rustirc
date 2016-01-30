@@ -26,10 +26,12 @@ impl EverythingHandler {
             NETWORK => {
                 if event_set.is_readable() {
                     let mut buf = Vec::with_capacity(256);
+                    for _ in 0..255 {buf.push(0);}
                     match self.stream.try_read(&mut buf) {
                         Ok(option) => {
                             if let Some(bytes_read) = option {
-                                println!("Got {:?} bytes", bytes_read);
+                                println!("Got {} bytes", bytes_read);
+                                println!("String: {:?}", String::from_utf8(buf));
                             } else {
                                 println!("Hmmm... nothing in the buffer: {:?}", buf)
                             }
@@ -37,7 +39,7 @@ impl EverythingHandler {
                         Err(err) => println!("Some error: {:?}", err),   
                     }
                 } else if event_set.is_writable() && !self.has_requested {
-                    match self.stream.write(&format!("HTTP 1.1 GET /index.html").into_bytes()) {
+                    match self.stream.write(&format!("GET /index.html HTTP/1.1\n\n").into_bytes()) {
                         Ok(_) => {
                             println!("Writing success");
                             self.has_requested = true;
@@ -69,7 +71,7 @@ impl Handler for EverythingHandler {
 
 pub fn main() {
     let mut event_loop = EventLoop::new().unwrap();
-    let stream = TcpStream::connect(&"127.0.0.1:80"
+    let stream = TcpStream::connect(&"google.com:80"
                                          .to_socket_addrs()
                                          .unwrap()
                                          .nth(0)
