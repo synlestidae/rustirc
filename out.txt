@@ -1,0 +1,4 @@
+     Running `target/debug/rustirc`
+Writing success
+Got 255 bytes
+String: Ok("HTTP/1.1 302 Found\r\nCache-Control: private\r\nContent-Type: text/html; charset=UTF-8\r\nLocation: http://www.google.co.nz/index.html?gfe_rd=cr&ei=jzqtVoaNNcvu8weN1bagBQ\r\nContent-Length: 271\r\nDate: Sat, 30 Jan 2016 22:34:55 GMT\r\nServer: GFE/2.0\r\n\r\n<HTML><HEAD>")
