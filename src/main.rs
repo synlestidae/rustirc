@@ -14,6 +14,7 @@ mod util;
 mod message;
 mod message_util;
 mod app_action;
+mod session_state;
 
 extern crate mio;
 extern crate log;

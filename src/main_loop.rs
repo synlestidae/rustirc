@@ -12,8 +12,8 @@ use std::net::{SocketAddr};
 use std::str::FromStr;
 
 use everything_handler::EverythingHandler;
-
 use message_util::{nick_message, user_message};
+use session_state::{Session};
 
 const NETWORK: Token = Token(0);
 const KEYBOARD: Token = Token(1);
@@ -42,7 +42,6 @@ fn start_session(host : &str, port_number : u16, nick : &str, name : &str) {
         = mpsc::channel();
 
     println!("Connecting on port {}", port_number);
-
     let connection_string : &str = &format!("{}:{}", host, port_number);
 
     let mut connection_result = TcpStream::connect(&connection_string.to_socket_addrs().unwrap().nth(0).unwrap());
@@ -59,8 +58,8 @@ fn start_session(host : &str, port_number : u16, nick : &str, name : &str) {
     let mut event_loop = EventLoop::new().unwrap();
     let handler_channel = event_loop.channel();
 
-    let mut handler = EverythingHandler(keyboard_rx, 
-        Box::new(connection.try_clone().unwrap()));
+    let mut handler = EverythingHandler::new(keyboard_rx, 
+        connection.try_clone().unwrap(), Session::new(nick, name));
 
     thread::spawn(move || {
         loop {
@@ -72,14 +71,8 @@ fn start_session(host : &str, port_number : u16, nick : &str, name : &str) {
         }
     });
 
-    event_loop.register(&connection, NETWORK, EventSet::readable(),
-                    PollOpt::level() | PollOpt::oneshot()).unwrap();
-
-    connection.write(&nick_message(nick).to_message_bytes_rn());
-    connection.write(&user_message(name, name).to_message_bytes_rn());
-    connection.flush();
-
-    println!("Connected!");
+    event_loop.register(&connection, NETWORK, EventSet::all(),
+                    PollOpt::level()).unwrap();
 
     event_loop.run(&mut handler).unwrap();
 }
